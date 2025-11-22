@@ -1,19 +1,22 @@
 use std::fs;
 use std::path::PathBuf;
+use std::io::Error;
 use crate::{Task, GREEN, RESET};
 
 const TASKS_FILE_NAME: &str = "tasks.json";
 
-pub fn create_file_if_not_exists() {
+pub fn create_file_if_not_exists() -> Result<(), Error> {
     let tasks_file_path = get_tasks_file_path();
 
     if let Some(parent) = tasks_file_path.parent() {
-        fs::create_dir_all(parent).expect("Failed to create directory");
+        fs::create_dir_all(parent)?;
     }
 
     if !tasks_file_path.exists() {
-        fs::write(&tasks_file_path, "[]").expect("Failed to create tasks file");
+        fs::write(&tasks_file_path, "[]")?;
     }
+
+    Ok(())
 }
 
 

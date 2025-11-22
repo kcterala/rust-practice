@@ -3,13 +3,14 @@ mod ui;
 mod storage;
 
 use serde::{Serialize, Deserialize};
+use crate::storage::create_file_if_not_exists;
 
 pub const RED: &str = "\x1b[31m";
 pub const GREEN: &str = "\x1b[32m";
 pub const BLUE: &str = "\x1b[34m";
 pub const RESET: &str = "\x1b[0m";
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 enum Stage {
     Todo,
     InProgress,
@@ -24,11 +25,22 @@ enum Priority {
 }
 
 impl Priority {
-    fn from_u8(priority: u8) -> Priority {
+    fn from_u8(priority: u8) -> Option<Priority> {
         match priority {
-            1 => Priority::High,
-            2 => Priority::Medium,
-            _ => Priority::Low,
+            1 => Some(Priority::High),
+            2 => Some(Priority::Medium),
+            3 => Some(Priority::Low),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for Priority {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Priority::High => write!(f, "High"),
+            Priority::Medium => write!(f, "Medium"),
+            Priority::Low => write!(f, "Low"),
         }
     }
 }
@@ -36,25 +48,24 @@ impl Priority {
 #[derive(Serialize, Deserialize, Debug)]
 struct Task {
     name: String,
-    completed: bool,
     stage: Stage,
     priority: Priority,
 }
 
 fn main() {
     eprintln!("Welcome to the sample todo list!");
-    storage::create_file_if_not_exists();
+    if let Err(err) = create_file_if_not_exists() {
+        eprintln!("{}Error creating config file: {}{}", RED, err, RESET);
+    }
+
     loop {
         let option = prompt::prompt_for_options();
-        if option.is_none() {
-            return;
-        }
-
-        match option.unwrap() {
-            1 => ui::render_todo_list(),
-            2 => add_task(),
-            3 => break,
-            _ => eprintln!("Invalid option")
+        match option {
+            Some(1) => ui::render_todo_list(),
+            Some(2) => add_task(),
+            Some(3) => break,
+            Some(_) => eprintln!("Invalid option"),
+            None => return,
         }
     }
 
@@ -78,10 +89,17 @@ fn add_task() {
 
     let priority: u8 = priority.unwrap();
 
+    let priority = match Priority::from_u8(priority) {
+        Some(p) => p,
+        None => {
+            eprintln!("Priority must be 1, 2, or 3");
+            return;
+        }
+    };
+
     let task = Task {
         name: task_name,
-        priority: Priority::from_u8(priority),
-        completed: false,
+        priority,
         stage: Stage::Todo
     };
 

@@ -1,4 +1,4 @@
-use crate::{storage, Task, BLUE, GREEN, RESET};
+use crate::{storage, Stage, BLUE, GREEN, RESET};
 
 
 pub fn show_options() {
@@ -17,14 +17,14 @@ pub fn render_todo_list() {
     }
 
     for (index, task) in todo_list.iter().enumerate() {
-        let status = if task.completed {
+        let status = if Stage::Done == task.stage {
             format!("{}[✓]{}", GREEN, RESET)
         } else {
             "[ ]".to_string()
         };
 
         eprintln!(
-            "{}. {} {} (Priority: {:?})",
+            "{}. {} {} (Priority: {})",
             index + 1,
             status,
             task.name,
