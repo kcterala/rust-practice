@@ -13,13 +13,23 @@ enum RequestType {
 }
 
 fn main() {
-    let url = prompt_and_get_url();
-    let request_type = prompt_and_get_request_type();
-
-    let data = match prompt_for_data(&request_type) {
-        Ok(data) => data,
-        Err(_) => String::new(),
+    let url = match prompt_and_get_url() {
+        Some(url) => url,
+        None => {
+            log("Failed to get URL, exiting", RED);
+            return;
+        }
     };
+
+    let request_type = match prompt_and_get_request_type() {
+        Some(rt) => rt,
+        None => {
+            log("Failed to get request type, exiting", RED);
+            return;
+        }
+    };
+
+    let data = prompt_for_data(&request_type).unwrap_or_default();
 
     let http_client = Client::new();
     let response = match request_type {
@@ -38,46 +48,45 @@ fn main() {
     log(&msg, GREEN);
 }
 
-fn prompt_and_get_url() -> String {
+fn prompt_and_get_url() -> Option<String> {
     let mut url = String::new();
     log("Please enter the url:", BLUE);
-    io::stdin()
-        .read_line(&mut url)
-        .expect("Failed to read line");
+    io::stdin().read_line(&mut url).ok()?;
     let url = url.trim();
-    url.to_string()
+    Some(url.to_string())
 }
 
-fn prompt_and_get_request_type() -> RequestType {
+fn prompt_and_get_request_type() -> Option<RequestType> {
     loop {
         log("Please select the request type: \n1. POST \n2. GET", BLUE);
         let mut request_type = String::new();
-        io::stdin()
-            .read_line(&mut request_type)
-            .expect("Cannot read line");
+        io::stdin().read_line(&mut request_type).ok()?;
 
-        let request_type: u32 = request_type
-            .trim()
-            .parse()
-            .expect("Unable to parse, please type a nubmer");
+        let request_type: u32 = match request_type.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                log("Unable to parse, please type a number", RED);
+                continue;
+            }
+        };
 
         match request_type {
-            1 => return RequestType::POST,
-            2 => return RequestType::GET,
+            1 => return Some(RequestType::POST),
+            2 => return Some(RequestType::GET),
             _ => log("Invalid choice, try again!", RED),
         }
     }
 }
 
-fn prompt_for_data(request_type: &RequestType) -> Result<String, String> {
+fn prompt_for_data(request_type: &RequestType) -> Option<String> {
     let mut data = String::new();
     match request_type {
         RequestType::POST => {
             log("Enter POST data", BLUE);
-            io::stdin().read_line(&mut data).expect("Cannot read line");
-            Ok(data.to_string())
+            io::stdin().read_line(&mut data).ok()?;
+            Some(data.to_string())
         }
-        RequestType::GET => Ok(String::new()),
+        RequestType::GET => Some(String::new()),
     }
 }
 
