@@ -17,7 +17,7 @@ struct AppState {
 fn main() -> Result<()> {
 	let mut state = AppState::default();
 	state.items.push(TodoItem { is_done: false, description: String::from("Finish application") });
-	state.items.push(TodoItem { is_done: false, description: String::from("Finish test") });
+	state.items.push(TodoItem { is_done: false, description: String::from("Finish application") });
 	state.items.push(TodoItem { is_done: false, description: String::from("Finish application") });
     color_eyre::install()?;
     let terminal = ratatui::init();
